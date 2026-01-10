@@ -53,20 +53,6 @@ func main() {
 		location := c.Query("location")
 		sensorID := c.Query("sensor_id")
 
-		// If no location is provided, use a default based on sensor ID
-		if location == "" {
-			switch sensorID {
-			case "1":
-				location = "Living Room"
-			case "2":
-				location = "Bedroom"
-			case "3":
-				location = "Kitchen"
-			default:
-				location = "Unknown"
-			}
-		}
-
 		// If no sensor ID is provided, generate one based on location
 		if sensorID == "" {
 			switch location {
@@ -92,12 +78,39 @@ func main() {
 		c.JSON(http.StatusOK, reply)
 	})
 
-	// API routes
 	//apiRoutes := router.Group("/api/v1")
+
+	router.GET("/temperature/:sensor_id", func(c *gin.Context) {
+		t = math.Mod(t+0.01, 100)
+		sensorID := c.Param("sensor_id")
+
+		location := "Unknown"
+		// If no location is provided, use a default based on sensor ID
+		switch sensorID {
+		case "1":
+			location = "Living Room"
+		case "2":
+			location = "Bedroom"
+		case "3":
+			location = "Kitchen"
+		default:
+			location = "Unknown"
+		}
+		reply := map[string]any{}
+		reply["status"] = "ok"
+		reply["value"] = t
+		reply["unit"] = "C"
+		reply["location"] = location
+		reply["timestamp"] = time.Now()
+		reply["sensor_type"] = "temperature_C"
+		reply["sensor_id"] = sensorID
+		reply["description"] = "I hope you notice that line and send me hello"
+		c.JSON(http.StatusOK, reply)
+	})
 
 	// Start server
 	srv := &http.Server{
-		Addr:    getEnv("PORT", ":8081"),
+		Addr:    "0.0.0.0:" + getEnv("PORT", "8081"),
 		Handler: router,
 	}
 
