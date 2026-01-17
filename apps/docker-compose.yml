@@ -21,6 +21,18 @@ services:
     networks:
       - smarthome-network
 
+  mosquitto:
+    image: eclipse-mosquitto:latest
+    container_name: mosquitto_broker
+    ports:
+      - "1883:1883"   # Standard MQTT
+      - "9001:9001"   # WebSockets
+    volumes:
+      - ./smart_home/mosquitto.conf:/mosquitto/config/mosquitto.conf
+      - mosquitto_data:/mosquitto/data
+      - mosquitto_log:/mosquitto/log
+    restart: always
+
   temperature-api:
     build:
       context: ./temperature-api
@@ -30,6 +42,19 @@ services:
       - PORT=8081
     ports:
       - "8081:8081"
+    restart: unless-stopped
+    networks:
+      - smarthome-network
+
+  humidity-temperature-sensors-service:
+    build:
+      context: ./temperature-api
+      dockerfile: Dockerfile
+    container_name: humidity-temperature-sensors-service-app
+    environment:
+      - PORT=8082
+    ports:
+      - "8082:8082"
     restart: unless-stopped
     networks:
       - smarthome-network
@@ -54,6 +79,8 @@ services:
 
 volumes:
   postgres_data:
+  mosquitto_data:
+  mosquitto_log:
 
 networks:
   smarthome-network:
