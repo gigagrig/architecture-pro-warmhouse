@@ -1,0 +1,53 @@
+@startuml
+' Visual styling for a cleaner look
+hide circle
+skinparam linetype ortho
+
+' Define Entities
+entity "User" as user {
+  *id : UUID <<PK>>
+  --
+  *username : VARCHAR(50)
+  *email : VARCHAR(255)
+}
+
+entity "House" as house {
+  *id : UUID <<PK>>
+  --
+  *owner_id : UUID <<FK>>
+  *name : VARCHAR(100)
+}
+
+entity "Room" as room {
+  *id : UUID <<PK>>
+  --
+  *house_id : UUID <<FK>>
+  *name : VARCHAR(100)
+  target_temperature : DECIMAL(5,2)
+}
+
+entity "Device" as device {
+  *id : UUID <<PK>>
+  --
+  *room_id : UUID <<FK>>
+  *name : VARCHAR(100)
+  *role : VARCHAR(20)
+  is_active : BOOLEAN
+}
+
+entity "TelemetryData" as telemetry_data {
+  *id : UUID <<PK>>
+  --
+  *device_id : UUID <<FK>>
+  *metric_type : VARCHAR(50)
+  *value : DECIMAL(10,2)
+  recorded_at : TIMESTAMP
+}
+
+' Define Relationships
+user ||--o{ house : "owns"
+house ||--|{ room : "contains"
+room ||--o{ device : "has deployed"
+device ||--o{ telemetry_data : "generates"
+
+@enduml
