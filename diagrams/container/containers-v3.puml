@@ -1,0 +1,68 @@
+@startuml
+!include https://raw.githubusercontent.com/plantuml-stdlib/C4-PlantUML/master/C4_Container.puml
+
+title Container Diagram: Smart Home SaaS (MVP, Unified Devices)
+
+Person(user, "Homeowner", "Controls devices via app, sets rules, views data.")
+
+System_Boundary(saas, "Smart Home Ecosystem") {
+    Container(mobile_app, "Mobile / Web App", "React Native", "Provides UI, sends REST commands, connects via WSS for real-time data.")
+    
+    Container(api_gateway, "API Gateway", "Go", "Routes API requests, handles authentication.")
+    
+    Container(auth_service, "Auth & ACL Service", "Go", "Validates JWTs and verifies MQTT topic access rights via Webhook.")
+    
+    Container(iot_broker, "IoT MQTT Broker", "EMQX", "Core message hub. Handles WSS for clients, TCP for devices, and routes internal traffic.")
+    
+    Container(account_service, "Account Service", "Go", "Manages user profiles and households.")
+    ContainerDb(db_accounts, "Account DB", "PostgreSQL", "Stores user data.")
+    
+    Container(device_service, "Device Service", "Go", "Manages device registry, ownership, and protocol metadata.")
+    ContainerDb(db_devices, "Device DB", "PostgreSQL", "Stores device metadata.")
+    
+    Container(command_service, "Command Service", "Go", "Abstracts protocols. Routes commands to broker or directly to devices.")
+    
+    Container(telemetry_service, "Telemetry Service", "Go", "Aggregates and stores metrics from the MQTT stream.")
+    ContainerDb(db_telemetry, "Timeseries DB", "TimescaleDB", "Stores historical telemetry data.")
+    
+    Container(scenario_service, "Scenario Service", "Go", "Evaluates automation rules based on telemetry stream.")
+    ContainerDb(db_scenarios, "Scenario DB", "PostgreSQL", "Stores automation rules.")
+}
+
+System_Ext(devices, "Devices", "Sensors, Relays, Smart Plugs, Cameras")
+
+' User & App interactions
+Rel(user, mobile_app, "Uses", "UI")
+Rel(mobile_app, api_gateway, "1. Login & fetch config", "JSON/HTTPS")
+Rel(mobile_app, iot_broker, "2. Real-time Pub/Sub", "MQTT over WSS")
+
+' API Gateway routes
+Rel(api_gateway, account_service, "User CRUD", "gRPC/HTTP")
+Rel(api_gateway, device_service, "Device CRUD", "gRPC/HTTP")
+Rel(api_gateway, command_service, "Standardized Commands", "gRPC/HTTP")
+Rel(api_gateway, scenario_service, "Rule CRUD", "gRPC/HTTP")
+Rel(api_gateway, telemetry_service, "Fetch history", "gRPC/HTTP")
+Rel(api_gateway, auth_service, "Generate JWT", "gRPC/HTTP")
+
+' Security & Broker to Devices
+Rel(iot_broker, auth_service, "Webhook: Check Topic ACL", "HTTP")
+Rel(auth_service, db_devices, "Check device ownership", "TCP")
+Rel(devices, iot_broker, "Publishes telemetry / Subscribes to commands", "MQTT (TCP/TLS)")
+
+' Internal Event Routing
+Rel(telemetry_service, iot_broker, "Consumes telemetry stream", "MQTT Shared Subscription")
+Rel(scenario_service, iot_broker, "Consumes telemetry for rule evaluation", "MQTT Shared Subscription")
+
+' Command Execution
+Rel(command_service, device_service, "Fetch device protocol info", "gRPC/HTTP")
+Rel(scenario_service, command_service, "Trigger automated command", "gRPC/HTTP")
+Rel(command_service, iot_broker, "Route MQTT command to device", "MQTT Publish")
+Rel(command_service, devices, "Direct command execution (e.g., HTTP API/Webhooks)", "HTTPS/API")
+
+' DB Connections
+Rel(account_service, db_accounts, "Reads/Writes", "TCP")
+Rel(device_service, db_devices, "Reads/Writes", "TCP")
+Rel(telemetry_service, db_telemetry, "Reads/Writes", "TCP")
+Rel(scenario_service, db_scenarios, "Reads/Writes", "TCP")
+
+@enduml
