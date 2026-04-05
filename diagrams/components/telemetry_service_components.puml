@@ -1,0 +1,20 @@
+@startuml
+!include https://raw.githubusercontent.com/plantuml-stdlib/C4-PlantUML/master/C4_Component.puml
+
+title Component Diagram for Telemetry Service
+
+Container_Boundary(telemetry_service, "Telemetry Service") {
+    Component(mqtt_subscriber, "MQTT Subscriber", "Paho MQTT", "Subscribes to sensors/+/telemetry.")
+    Component(payload_parser, "Payload Parser", "Go JSON", "Parses raw MQTT payloads into Telemetry structs.")
+    Component(telemetry_repository, "Telemetry Repository", "Go sql", "Inserts telemetry data into TimescaleDB.")
+}
+
+Container(mqtt_broker, "Mosquitto Broker", "MQTT", "Message broker")
+ContainerDb(timescaledb, "TimescaleDB", "PostgreSQL", "Stores time-series telemetry data")
+
+Rel(mqtt_broker, mqtt_subscriber, "Delivers messages to", "MQTT TCP")
+Rel(mqtt_subscriber, payload_parser, "Passes raw payload to")
+Rel(payload_parser, telemetry_repository, "Passes parsed data to")
+Rel(telemetry_repository, timescaledb, "Inserts telemetry data", "TCP/SQL")
+
+@enduml

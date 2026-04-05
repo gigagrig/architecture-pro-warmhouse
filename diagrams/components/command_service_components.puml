@@ -1,0 +1,28 @@
+@startuml
+!include https://raw.githubusercontent.com/plantuml-stdlib/C4-PlantUML/master/C4_Component.puml
+
+title Component Diagram for Command Service
+
+Container_Boundary(command_service, "Command Service") {
+    Component(cmd_handler, "Command HTTP Handler", "Go HTTP", "Receives POST /api/v1/commands requests.")
+    Component(device_client, "Device Service Client", "Go HTTP Client", "Fetches device protocol info.")
+    Component(cmd_router, "Command Router", "Go", "Decides whether to use MQTT or HTTP based on protocol.")
+    Component(mqtt_client, "MQTT Publisher", "Paho MQTT", "Publishes commands to MQTT broker.")
+    Component(http_client, "HTTP Direct Publisher", "Go HTTP Client", "Sends commands directly to HTTP devices.")
+}
+
+Container(api_gateway, "API Gateway", "Go", "Routes requests to internal services")
+Container(device_service, "Device Service", "Go", "Manages devices")
+Container(mqtt_broker, "Mosquitto Broker", "MQTT", "Message broker")
+System_Ext(devices, "Smart Devices", "Physical devices")
+
+Rel(api_gateway, cmd_handler, "Makes API calls to", "JSON/HTTP")
+Rel(cmd_handler, cmd_router, "Delegates command execution to")
+Rel(cmd_router, device_client, "Uses to get device info")
+Rel(device_client, device_service, "GET /api/v1/devices/{id}", "JSON/HTTP")
+Rel(cmd_router, mqtt_client, "Routes to (if protocol=mqtt)")
+Rel(cmd_router, http_client, "Routes to (if protocol=http)")
+Rel(mqtt_client, mqtt_broker, "Publishes command to", "MQTT TCP")
+Rel(http_client, devices, "Sends POST request to", "HTTP")
+
+@enduml
