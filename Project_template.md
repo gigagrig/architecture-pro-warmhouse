@@ -29,7 +29,7 @@
 
 ### 5. Визуализация контекста системы — диаграмма С4
 
-[WarmHouse System](diagrams/context/WarmHouse_Context.puml)
+* **[WarmHouse System](diagrams/context/WarmHouse_Context.puml)**
 
 # Задание 2. Проектирование микросервисной архитектуры
 
@@ -37,38 +37,44 @@
 
 **Диаграмма контейнеров (Containers)**
 
-Добавьте диаграмму.
+* **[Контейнеры](diagrams/container/containers-v3.puml)**
 
 **Диаграмма компонентов (Components)**
 
-Добавьте диаграмму для каждого из выделенных микросервисов.
+* **[Cервис command_service](diagrams/components/command_service_components.puml)**
+* **[Cервис auth_service](diagrams/components/auth_service_components.puml)**
+* **[Cервис device_service](diagrams/components/device_service_components.puml)**
+* **[Cервис telemetry_service](diagrams/components/telemetry_service_components.puml)**
+
 
 **Диаграмма кода (Code)**
 
-Добавьте одну диаграмму или несколько.
+* **[Диаграмма кода сервиса command_service](diagrams/code/command_service_code.puml)**
+
 
 # Задание 3. Разработка ER-диаграммы
 
-[WarmHouse entities relastionship diagram](diagrams/entity_relationship/er.puml)
+* **[WarmHouse entities relastionship diagram](diagrams/entity_relationship/er.puml)**
 
 
 # Задание 4. Создание и документирование API
 
 ### 1. Тип API
 
-Укажите, какой тип API вы будете использовать для взаимодействия микросервисов. Объясните своё решение.
+Для взаимодействия микросервисов в нашей системе используется смешанный (гибридный) подход:
+
+1. **REST API (HTTP/JSON)**: Применяется для синхронных клиент-серверных взаимодействий (CRUD операции устройств, запросы пользователя через API Gateway) и межсервисного общения (например, `Command Service` и `Auth Service` запрашивают метаданные у `Device Service`). 
+   * **Почему:** REST — индустриальный стандарт для публичных API. Он прост в реализации, хорошо поддерживается клиентскими приложениями (мобильными и веб) и легко маршрутизируется через API Gateway.
+2. **MQTT (Message Queuing Telemetry Transport)**: Используется для асинхронного обмена сообщениями (телеметрия) и отправки управляющих команд на IoT-устройства. Внутри бэкенда сервисы (Telemetry, Scenario) подписываются на потоки данных через MQTT, а клиенты могут получать обновления в реальном времени через MQTT over WebSockets (WSS).
+   * **Почему:** MQTT специально создан для IoT.  Он легковесный и требует минимального оверхеда по сравнению с HTTP, что идеально подходит для устройств с ограниченными ресурсами. Так же он поддерживает паттерн Pub/Sub, что обеспечит возможность разгрузить REST ендпоинты от обработки большого количества запросов по обновлению данных датчиков. Дополнительно обеспечивается надежность доставки (QoS).
 
 ### 2. Документация API
 
-Здесь приложите ссылки на документацию API для микросервисов, которые вы спроектировали в первой части проектной работы. Для документирования используйте Swagger/OpenAPI или AsyncAPI.
+* **[OpenAPI 3.0 Specification (REST API)](doc-api/openapi.yaml)** — описывает API для API Gateway, Device Service, Command Service и структуру сущностей (Device).
+* **[AsyncAPI 2.6.0 Specification (MQTT API)](doc-api/asyncapi.yaml)** — описывает структуру топиков и формат JSON-сообщений (Payloads) для публикации телеметрии от датчиков и подписки на управляющие команды.
 
 # Задание 5. Работа с docker и docker-compose
 
-Перейдите в apps.
-
-Там находится приложение-монолит для работы с датчиками температуры. В README.md описано как запустить решение.
-
-Вам нужно:
 
 1) сделано приложение temperature-api на Go, которое при запросе /temperature?location= отдает рандомное значение температуры.
 

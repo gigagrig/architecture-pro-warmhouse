@@ -1,0 +1,111 @@
+openapi: 3.0.3
+info:
+  title: WarmHouse Smart Home API
+  version: 1.0.0
+  description: REST API for WarmHouse IoT Platform (Device Registry, Commands, Auth Webhooks)
+servers:
+  - url: http://localhost:8080
+    description: API Gateway
+paths:
+  /api/v1/devices:
+    get:
+      summary: Get all devices
+      tags: [Devices]
+      responses:
+        '200':
+          description: A list of devices
+          content:
+            application/json:
+              schema:
+                type: array
+                items:
+                  $ref: '#/components/schemas/Device'
+    post:
+      summary: Register a new device
+      tags: [Devices]
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              type: object
+              required: [name]
+              properties:
+                name:
+                  type: string
+                protocol:
+                  type: string
+                  default: mqtt
+                user_id:
+                  type: string
+      responses:
+        '201':
+          description: Device created
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/Device'
+  /api/v1/devices/{id}:
+    get:
+      summary: Get device by ID
+      tags: [Devices]
+      parameters:
+        - name: id
+          in: path
+          required: true
+          schema:
+            type: string
+      responses:
+        '200':
+          description: Device details
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/Device'
+        '404':
+          description: Device not found
+  /api/v1/commands:
+    post:
+      summary: Send command to a device
+      tags: [Commands]
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              type: object
+              required: [device_id, action]
+              properties:
+                device_id:
+                  type: string
+                action:
+                  type: string
+      responses:
+        '200':
+          description: Command sent successfully
+          content:
+            application/json:
+              schema:
+                type: object
+                properties:
+                  status:
+                    type: string
+                    example: command_sent
+        '400':
+          description: Invalid request or unsupported protocol
+components:
+  schemas:
+    Device:
+      type: object
+      properties:
+        id:
+          type: string
+        user_id:
+          type: string
+        name:
+          type: string
+        protocol:
+          type: string
+        created_at:
+          type: string
+          format: date-time

@@ -1,0 +1,70 @@
+asyncapi: 2.6.0
+info:
+  title: WarmHouse MQTT API
+  version: 1.0.0
+  description: MQTT Messaging API for sensors telemetry and device commands.
+servers:
+  mosquitto:
+    url: localhost:1883
+    protocol: mqtt
+    description: Internal MQTT broker for IoT devices
+  mosquitto_wss:
+    url: localhost:9001
+    protocol: wss
+    description: MQTT over WebSockets for frontend clients
+channels:
+  sensors/{sensor_id}/telemetry:
+    parameters:
+      sensor_id:
+        schema:
+          type: string
+        description: Unique identifier of the sensor
+    publish:
+      summary: Sensor publishes telemetry data
+      message:
+        $ref: '#/components/messages/TelemetryMessage'
+    subscribe:
+      summary: Cloud services (Telemetry, Scenario) and Clients subscribe to telemetry
+      message:
+        $ref: '#/components/messages/TelemetryMessage'
+  devices/{device_id}/commands:
+    parameters:
+      device_id:
+        schema:
+          type: string
+        description: Unique identifier of the device
+    publish:
+      summary: Command Service publishes a command to the device
+      message:
+        $ref: '#/components/messages/CommandMessage'
+    subscribe:
+      summary: Device subscribes to its command topic
+      message:
+        $ref: '#/components/messages/CommandMessage'
+components:
+  messages:
+    TelemetryMessage:
+      name: Telemetry
+      title: Telemetry Data
+      payload:
+        type: object
+        properties:
+          sensor_id:
+            type: string
+          temperature:
+            type: number
+          humidity:
+            type: number
+          status:
+            type: string
+          timestamp:
+            type: integer
+    CommandMessage:
+      name: Command
+      title: Device Command
+      payload:
+        type: object
+        properties:
+          action:
+            type: string
+            description: The action to be executed (e.g., turn_on, turn_off)
