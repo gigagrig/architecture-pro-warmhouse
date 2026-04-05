@@ -25,7 +25,6 @@ func authHandler(w http.ResponseWriter, r *http.Request) {
 		return
 	}
 
-	// In MVP we allow any non-empty username
 	r.ParseForm()
 	username := r.FormValue("username")
 	
@@ -34,6 +33,18 @@ func authHandler(w http.ResponseWriter, r *http.Request) {
 		return
 	}
 
+	deviceSvcURL := getEnv("DEVICE_SERVICE_URL", "http://device-service:8080")
+	resp, err := http.Get(deviceSvcURL + "/api/v1/devices/" + username)
+	if err != nil || resp.StatusCode != http.StatusOK {
+		log.Printf("Auth failed for username/device_id: %s", username)
+		w.WriteHeader(http.StatusUnauthorized)
+		return
+	}
+	if resp != nil {
+		resp.Body.Close()
+	}
+
+	log.Printf("Auth succeeded for username: %s", username)
 	w.WriteHeader(http.StatusOK)
 }
 
@@ -45,13 +56,23 @@ func aclHandler(w http.ResponseWriter, r *http.Request) {
 	}
 
 	r.ParseForm()
-	// acc: 1 == sub, 2 == pub
-	// topic: the topic
-	// clientid, username
-	
-	// For MVP, we just allow everything to proceed
-	// Real logic would map username to device ID and check topic permissions
-	
+	username := r.FormValue("username")
+	topic := r.FormValue("topic")
+	acc := r.FormValue("acc") // 1 == sub, 2 == pub
+
+	log.Printf("ACL check: user=%s topic=%s acc=%s", username, topic, acc)
+
+	deviceSvcURL := getEnv("DEVICE_SERVICE_URL", "http://device-service:8080")
+	resp, err := http.Get(deviceSvcURL + "/api/v1/devices/" + username)
+	if err != nil || resp.StatusCode != http.StatusOK {
+		log.Printf("ACL denied for device/user: %s", username)
+		w.WriteHeader(http.StatusUnauthorized)
+		return
+	}
+	if resp != nil {
+		resp.Body.Close()
+	}
+
 	w.WriteHeader(http.StatusOK)
 }
 

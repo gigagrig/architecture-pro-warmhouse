@@ -32,6 +32,8 @@ services:
       - ./smart_home/mosquitto.conf:/mosquitto/config/mosquitto.conf
       - mosquitto_data:/mosquitto/data
       - mosquitto_log:/mosquitto/log
+    depends_on:
+      - auth-service
     restart: always
     networks:
       - smarthome-network
@@ -152,6 +154,9 @@ services:
     container_name: auth-service
     environment:
       - PORT=8080
+      - DEVICE_SERVICE_URL=http://device-service:8080
+    depends_on:
+      - device-service
     restart: unless-stopped
     networks:
       - smarthome-network

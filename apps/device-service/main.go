@@ -46,12 +46,42 @@ func main() {
 	mux.HandleFunc("/api/v1/devices", func(w http.ResponseWriter, r *http.Request) {
 		devicesHandler(w, r)
 	})
+	mux.HandleFunc("/api/v1/devices/", func(w http.ResponseWriter, r *http.Request) {
+		deviceHandler(w, r)
+	})
 
 	port := getEnv("PORT", "8080")
 	log.Printf("Device Service starting on port %s", port)
 	if err := http.ListenAndServe(":"+port, mux); err != nil {
 		log.Fatalf("Server failed: %v", err)
 	}
+}
+
+func deviceHandler(w http.ResponseWriter, r *http.Request) {
+	w.Header().Set("Content-Type", "application/json")
+	if r.Method != http.MethodGet {
+		http.Error(w, `{"error":"Method not allowed"}`, http.StatusMethodNotAllowed)
+		return
+	}
+
+	id := r.URL.Path[len("/api/v1/devices/"):]
+	if id == "" {
+		http.Error(w, `{"error":"Missing ID"}`, http.StatusBadRequest)
+		return
+	}
+
+	var d Device
+	err := db.QueryRow("SELECT id, user_id, name, protocol, created_at FROM devices WHERE id = $1", id).Scan(&d.ID, &d.UserID, &d.Name, &d.Protocol, &d.CreatedAt)
+	if err != nil {
+		if err == sql.ErrNoRows {
+			http.Error(w, `{"error":"Device not found"}`, http.StatusNotFound)
+		} else {
+			http.Error(w, `{"error":"DB error"}`, http.StatusInternalServerError)
+		}
+		return
+	}
+
+	json.NewEncoder(w).Encode(d)
 }
 
 func devicesHandler(w http.ResponseWriter, r *http.Request) {

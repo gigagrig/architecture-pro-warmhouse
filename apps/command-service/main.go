@@ -56,18 +56,48 @@ func commandHandler(w http.ResponseWriter, r *http.Request) {
 		return
 	}
 
-	topic := fmt.Sprintf("devices/%s/commands", req.DeviceID)
-	payload, _ := json.Marshal(map[string]string{"action": req.Action})
-
-	token := mqttClient.Publish(topic, 1, false, payload)
-	token.Wait()
-	if err := token.Error(); err != nil {
-		log.Printf("MQTT publish error: %v", err)
-		http.Error(w, `{"error":"Failed to send command"}`, http.StatusInternalServerError)
+	deviceSvcURL := getEnv("DEVICE_SERVICE_URL", "http://device-service:8080")
+	resp, err := http.Get(fmt.Sprintf("%s/api/v1/devices/%s", deviceSvcURL, req.DeviceID))
+	if err != nil {
+		log.Printf("Failed to contact device-service: %v", err)
+		http.Error(w, `{"error":"Internal error"}`, http.StatusInternalServerError)
+		return
+	}
+	if resp.StatusCode != http.StatusOK {
+		resp.Body.Close()
+		http.Error(w, `{"error":"Device not found"}`, http.StatusBadRequest)
 		return
 	}
 
-	log.Printf("Sent command %s to %s", string(payload), topic)
+	var device struct {
+		Protocol string `json:"protocol"`
+	}
+	if err := json.NewDecoder(resp.Body).Decode(&device); err != nil {
+		resp.Body.Close()
+		http.Error(w, `{"error":"Failed to parse device"}`, http.StatusInternalServerError)
+		return
+	}
+	resp.Body.Close()
+
+	if device.Protocol == "mqtt" {
+		topic := fmt.Sprintf("devices/%s/commands", req.DeviceID)
+		payload, _ := json.Marshal(map[string]string{"action": req.Action})
+
+		token := mqttClient.Publish(topic, 1, false, payload)
+		token.Wait()
+		if err := token.Error(); err != nil {
+			log.Printf("MQTT publish error: %v", err)
+			http.Error(w, `{"error":"Failed to send command"}`, http.StatusInternalServerError)
+			return
+		}
+		log.Printf("Sent MQTT command %s to %s", string(payload), topic)
+	} else if device.Protocol == "http" {
+		log.Printf("Sent mock HTTP POST command %s to device %s", req.Action, req.DeviceID)
+	} else {
+		log.Printf("Unsupported protocol %s for device %s", device.Protocol, req.DeviceID)
+		http.Error(w, `{"error":"Unsupported protocol"}`, http.StatusBadRequest)
+		return
+	}
 
 	w.Header().Set("Content-Type", "application/json")
 	w.WriteHeader(http.StatusOK)
