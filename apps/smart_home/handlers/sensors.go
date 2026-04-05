@@ -40,6 +40,17 @@ func (h *SensorHandler) RegisterRoutes(router *gin.RouterGroup) {
 		sensors.PATCH("/:id/value", h.UpdateSensorValue)
 		sensors.GET("/temperature/:location", h.GetTemperatureByLocation)
 	}
+	router.GET("/telemetry", h.GetTelemetry)
+}
+
+// GetTelemetry handles GET /api/v1/telemetry
+func (h *SensorHandler) GetTelemetry(c *gin.Context) {
+	telemetry, err := h.DB.GetTelemetry(context.Background())
+	if err != nil {
+		c.JSON(http.StatusInternalServerError, gin.H{"error": err.Error()})
+		return
+	}
+	c.JSON(http.StatusOK, telemetry)
 }
 
 // GetSensors handles GET /api/v1/sensors

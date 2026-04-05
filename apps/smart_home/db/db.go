@@ -247,3 +247,38 @@ func (db *DB) UpdateSensorValue(ctx context.Context, id int, value float64, stat
 
 	return nil
 }
+
+// GetTelemetry retrieves all telemetry data from the database
+func (db *DB) GetTelemetry(ctx context.Context) ([]models.Telemetry, error) {
+	query := `
+		SELECT id, sensor_id, temperature, humidity, status, timestamp
+		FROM telemetry
+		ORDER BY timestamp DESC
+		LIMIT 100
+	`
+
+	rows, err := db.Pool.Query(ctx, query)
+	if err != nil {
+		return nil, fmt.Errorf("error querying telemetry: %w", err)
+	}
+	defer rows.Close()
+
+	var telemetry []models.Telemetry
+	for rows.Next() {
+		var t models.Telemetry
+		err := rows.Scan(
+			&t.ID,
+			&t.SensorID,
+			&t.Temperature,
+			&t.Humidity,
+			&t.Status,
+			&t.Timestamp,
+		)
+		if err != nil {
+			return nil, fmt.Errorf("error scanning telemetry row: %w", err)
+		}
+		telemetry = append(telemetry, t)
+	}
+
+	return telemetry, nil
+}

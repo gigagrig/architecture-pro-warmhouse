@@ -5,6 +5,7 @@ import (
 	"fmt"
 	"log"
 	"math/rand"
+	"os"
 	"time"
 
 	mqtt "github.com/eclipse/paho.mqtt.golang"
@@ -21,7 +22,8 @@ type SensorData struct {
 
 func main() {
 	// 1. Broker Configuration
-	opts := mqtt.NewClientOptions().AddBroker("tcp://localhost:1883")
+	broker := getEnv("MQTT_URL", "tcp://mosquitto:1883")
+	opts := mqtt.NewClientOptions().AddBroker(broker)
 	opts.SetClientID("go_sensor_producer")
 	opts.SetCleanSession(true)
 
@@ -31,7 +33,7 @@ func main() {
 	}
 	defer client.Disconnect(250)
 
-	fmt.Println("Producer connected to broker. Sending telemetry...")
+	fmt.Printf("Producer connected to broker at %s. Sending telemetry...\n", broker)
 
 	// 2. Simulation Loop
 	for {
@@ -53,4 +55,12 @@ func main() {
 		fmt.Printf("Published: %s\n", payload)
 		time.Sleep(5 * time.Second)
 	}
+}
+
+func getEnv(key, defaultValue string) string {
+	value := os.Getenv(key)
+	if value == "" {
+		return defaultValue
+	}
+	return value
 }

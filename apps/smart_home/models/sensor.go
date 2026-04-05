@@ -41,3 +41,13 @@ type SensorUpdate struct {
 	Unit     string     `json:"unit"`
 	Status   string     `json:"status"`
 }
+
+// Telemetry represents a single telemetry reading
+type Telemetry struct {
+	ID          int       `json:"id"`
+	SensorID    string    `json:"sensor_id"`
+	Temperature float64   `json:"temperature"`
+	Humidity    float64   `json:"humidity"`
+	Status      string    `json:"status"`
+	Timestamp   time.Time `json:"timestamp"`
+}

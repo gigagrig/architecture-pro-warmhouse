@@ -1,4 +1,4 @@
-module humidity-temperature-sensors-service
+module command-service
 
 go 1.24.0
 
