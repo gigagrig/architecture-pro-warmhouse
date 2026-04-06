@@ -22,7 +22,7 @@ type SensorData struct {
 
 func main() {
 	mqttURL := getEnv("MQTT_URL", "tcp://mosquitto:1883")
-	commandURL := getEnv("COMMAND_SERVICE_URL", "http://command-service:8080/api/v1/commands")
+	commandURL := getEnv("COMMAND_SERVICE_URL", "http://command-service:8080/api/v2/commands")
 
 	opts := mqtt.NewClientOptions().AddBroker(mqttURL)
 	opts.SetClientID("scenario_service")
@@ -73,7 +73,7 @@ func triggerCommand(url string, deviceID string, action string) {
 		return
 	}
 	defer resp.Body.Close()
-	
+
 	log.Printf("Triggered command %s for device %s. Status: %d", action, deviceID, resp.StatusCode)
 }
 

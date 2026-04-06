@@ -1,8 +1,6 @@
-version: '3.8'
-
 services:
   postgres:
-    image: postgres:16-alpine
+    image: timescale/timescaledb:latest-pg16
     container_name: smarthome-postgres
     volumes:
       - ./smart_home/init.sql:/docker-entrypoint-initdb.d/init.sql
@@ -168,7 +166,7 @@ services:
     container_name: scenario-service
     environment:
       - MQTT_URL=tcp://mosquitto:1883
-      - COMMAND_SERVICE_URL=http://command-service:8080/api/v1/commands
+      - COMMAND_SERVICE_URL=http://command-service:8080
     depends_on:
       - mosquitto
       - command-service

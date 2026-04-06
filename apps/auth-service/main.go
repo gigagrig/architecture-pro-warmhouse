@@ -27,14 +27,14 @@ func authHandler(w http.ResponseWriter, r *http.Request) {
 
 	r.ParseForm()
 	username := r.FormValue("username")
-	
+
 	if username == "" {
 		w.WriteHeader(http.StatusUnauthorized)
 		return
 	}
 
 	deviceSvcURL := getEnv("DEVICE_SERVICE_URL", "http://device-service:8080")
-	resp, err := http.Get(deviceSvcURL + "/api/v1/devices/" + username)
+	resp, err := http.Get(deviceSvcURL + "/api/v2/devices/" + username)
 	if err != nil || resp.StatusCode != http.StatusOK {
 		log.Printf("Auth failed for username/device_id: %s", username)
 		w.WriteHeader(http.StatusUnauthorized)
@@ -63,7 +63,7 @@ func aclHandler(w http.ResponseWriter, r *http.Request) {
 	log.Printf("ACL check: user=%s topic=%s acc=%s", username, topic, acc)
 
 	deviceSvcURL := getEnv("DEVICE_SERVICE_URL", "http://device-service:8080")
-	resp, err := http.Get(deviceSvcURL + "/api/v1/devices/" + username)
+	resp, err := http.Get(deviceSvcURL + "/api/v2/devices/" + username)
 	if err != nil || resp.StatusCode != http.StatusOK {
 		log.Printf("ACL denied for device/user: %s", username)
 		w.WriteHeader(http.StatusUnauthorized)

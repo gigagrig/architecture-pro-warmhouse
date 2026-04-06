@@ -7,7 +7,7 @@ servers:
   - url: http://localhost:8080
     description: API Gateway
 paths:
-  /api/v1/devices:
+  /api/v2/devices:
     get:
       summary: Get all devices
       tags: [Devices]
@@ -45,7 +45,7 @@ paths:
             application/json:
               schema:
                 $ref: '#/components/schemas/Device'
-  /api/v1/devices/{id}:
+  /api/v2/devices/{id}:
     get:
       summary: Get device by ID
       tags: [Devices]
@@ -64,7 +64,7 @@ paths:
                 $ref: '#/components/schemas/Device'
         '404':
           description: Device not found
-  /api/v1/commands:
+  /api/v2/commands:
     post:
       summary: Send command to a device
       tags: [Commands]

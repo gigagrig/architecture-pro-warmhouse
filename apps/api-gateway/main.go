@@ -23,12 +23,12 @@ func main() {
 
 		log.Printf("Gateway received request for: %s", path)
 
-		if strings.HasPrefix(path, "/api/v1/devices") {
+		if strings.HasPrefix(path, "/api/v2/devices") {
 			deviceProxy.ServeHTTP(w, r)
 			return
 		}
 
-		if strings.HasPrefix(path, "/api/v1/commands") {
+		if strings.HasPrefix(path, "/api/v2/commands") {
 			commandProxy.ServeHTTP(w, r)
 			return
 		}

@@ -26,7 +26,7 @@ func main() {
 	log.Printf("Connected to MQTT broker at %s", mqttURL)
 
 	mux := http.NewServeMux()
-	mux.HandleFunc("/api/v1/commands", commandHandler)
+	mux.HandleFunc("/api/v2/commands", commandHandler)
 
 	port := getEnv("PORT", "8080")
 	log.Printf("Command Service starting on port %s", port)
@@ -57,7 +57,7 @@ func commandHandler(w http.ResponseWriter, r *http.Request) {
 	}
 
 	deviceSvcURL := getEnv("DEVICE_SERVICE_URL", "http://device-service:8080")
-	resp, err := http.Get(fmt.Sprintf("%s/api/v1/devices/%s", deviceSvcURL, req.DeviceID))
+	resp, err := http.Get(fmt.Sprintf("%s/api/v2/devices/%s", deviceSvcURL, req.DeviceID))
 	if err != nil {
 		log.Printf("Failed to contact device-service: %v", err)
 		http.Error(w, `{"error":"Internal error"}`, http.StatusInternalServerError)

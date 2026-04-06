@@ -1,10 +1,5 @@
--- Create the database if it doesn't exist
-CREATE DATABASE smarthome;
-
 -- Connect to the database
 \c smarthome;
-
-CREATE EXTENSION IF NOT EXISTS timescaledb;
 
 -- Create the sensors table
 CREATE TABLE IF NOT EXISTS sensors (
@@ -18,6 +13,18 @@ CREATE TABLE IF NOT EXISTS sensors (
     last_updated TIMESTAMP WITH TIME ZONE NOT NULL DEFAULT NOW(),
     created_at TIMESTAMP WITH TIME ZONE NOT NULL DEFAULT NOW()
 );
+
+-- Create devices table for device-service
+CREATE TABLE IF NOT EXISTS devices (
+    id VARCHAR(100) PRIMARY KEY,
+    user_id VARCHAR(100) NOT NULL,
+    name VARCHAR(100) NOT NULL,
+    protocol VARCHAR(50) NOT NULL DEFAULT 'mqtt',
+    created_at TIMESTAMP WITH TIME ZONE NOT NULL DEFAULT NOW()
+);
+
+CREATE EXTENSION IF NOT EXISTS timescaledb;
+
 
 -- Create the telemetry table
 CREATE TABLE IF NOT EXISTS telemetry (
@@ -40,11 +47,3 @@ CREATE INDEX IF NOT EXISTS idx_sensors_status ON sensors(status);
 CREATE INDEX IF NOT EXISTS idx_telemetry_sensor_id ON telemetry(sensor_id);
 CREATE INDEX IF NOT EXISTS idx_telemetry_timestamp ON telemetry(timestamp);
 
--- Create devices table for device-service
-CREATE TABLE IF NOT EXISTS devices (
-    id VARCHAR(100) PRIMARY KEY,
-    user_id VARCHAR(100) NOT NULL,
-    name VARCHAR(100) NOT NULL,
-    protocol VARCHAR(50) NOT NULL DEFAULT 'mqtt',
-    created_at TIMESTAMP WITH TIME ZONE NOT NULL DEFAULT NOW()
-);

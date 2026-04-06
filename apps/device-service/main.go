@@ -43,10 +43,10 @@ func main() {
 	log.Println("Connected to DB successfully")
 
 	mux := http.NewServeMux()
-	mux.HandleFunc("/api/v1/devices", func(w http.ResponseWriter, r *http.Request) {
+	mux.HandleFunc("/api/v2/devices", func(w http.ResponseWriter, r *http.Request) {
 		devicesHandler(w, r)
 	})
-	mux.HandleFunc("/api/v1/devices/", func(w http.ResponseWriter, r *http.Request) {
+	mux.HandleFunc("/api/v2/devices/", func(w http.ResponseWriter, r *http.Request) {
 		deviceHandler(w, r)
 	})
 
@@ -64,7 +64,7 @@ func deviceHandler(w http.ResponseWriter, r *http.Request) {
 		return
 	}
 
-	id := r.URL.Path[len("/api/v1/devices/"):]
+	id := r.URL.Path[len("/api/v2/devices/"):]
 	if id == "" {
 		http.Error(w, `{"error":"Missing ID"}`, http.StatusBadRequest)
 		return
