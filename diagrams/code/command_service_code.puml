@@ -1,0 +1,40 @@
+@startuml
+title Code Diagram for Command Service
+
+package "main" {
+    class GlobalVariables << (V, #D08770) >> {
+        + mqttClient : mqtt.Client
+    }
+
+    class Main << (F, #88C0D0) function >> {
+        + main()
+    }
+
+    class CommandHandler << (F, #88C0D0) function >> {
+        + commandHandler(w http.ResponseWriter, r *http.Request)
+    }
+
+    class GetEnv << (F, #88C0D0) function >> {
+        + getEnv(key string, defaultValue string) string
+    }
+
+    struct CommandRequest << (S, #A3BE8C) struct >> {
+        + DeviceID : string
+        + Action : string
+    }
+
+    struct DeviceResponse << (S, #A3BE8C) struct >> {
+        + Protocol : string
+    }
+
+    Main --> GlobalVariables : initializes mqttClient
+    Main --> CommandHandler : registers route /api/v1/commands
+    Main --> GetEnv : calls
+    
+    CommandHandler --> CommandRequest : unmarshals JSON request
+    CommandHandler --> DeviceResponse : unmarshals JSON response from Device Service
+    CommandHandler --> GetEnv : gets DEVICE_SERVICE_URL
+    CommandHandler --> GlobalVariables : publishes via mqttClient
+}
+
+@enduml

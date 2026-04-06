@@ -1,0 +1,24 @@
+@startuml WarmHouse_Context 
+title WarmHouse Context Diagram
+
+top to bottom direction
+
+!includeurl https://raw.githubusercontent.com/RicardoNiepel/C4-PlantUML/master/C4_Component.puml
+
+Person(user, "User", "A User of the WarmHouse")
+Person(service_worker, "Service worker", "")
+System(WarmHouseSystem, "Core WarmHouse System", "System managing devices(sensors, cameras, relles), devices data, users interactions with devices")
+System(WarmHouseSalesSystem, "WarmHouse Sales System", "Website for sales and promotion of WarmHouse service and devices kits")
+
+System_Ext(api, "Third-Party Devices", "Protocols and other stuff for devices integration")
+System_Ext(bank, "Bank System", "External bank for processing payments")
+
+Rel(user, WarmHouseSystem, "Accesses the system to add new devices, monitor and control devices")
+Rel(user, WarmHouseSalesSystem, "Reviews WarmHouse solutions, buys WarmHouse service and devices kits")
+Rel(service_worker, WarmHouseSystem, "Registers new users and devices if needed, helps users with issues")
+Rel(WarmHouseSystem,bank,"Processes payments")
+Rel(WarmHouseSalesSystem,bank,"Processes payments")
+Rel(WarmHouseSystem, api, "Integrations with third-party devices")
+Rel_R(WarmHouseSalesSystem, WarmHouseSystem, "New users")
+
+@enduml

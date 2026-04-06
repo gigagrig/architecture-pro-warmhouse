@@ -1,0 +1,18 @@
+@startuml
+!include https://raw.githubusercontent.com/plantuml-stdlib/C4-PlantUML/master/C4_Component.puml
+
+title Component Diagram for Auth & ACL Service
+
+Container_Boundary(auth_service, "Auth & ACL Service") {
+    Component(webhook_server, "Webhook Server", "Go HTTP", "Serves /auth and /acl endpoints for Mosquitto go-auth plugin.")
+    Component(device_validator, "Device Validator", "Go HTTP Client", "Validates if device/user exists by calling Device Service.")
+}
+
+Container(mosquitto_broker, "Mosquitto Broker", "MQTT + go-auth", "Broker with HTTP webhook plugin")
+Container(device_service, "Device Service", "Go", "Registry of valid devices/users")
+
+Rel(mosquitto_broker, webhook_server, "Sends HTTP POST for Auth/ACL", "JSON/HTTP")
+Rel(webhook_server, device_validator, "Delegates validation to")
+Rel(device_validator, device_service, "GET /api/v1/devices/{id}", "JSON/HTTP")
+
+@enduml

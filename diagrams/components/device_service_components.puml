@@ -1,0 +1,22 @@
+@startuml
+!include https://raw.githubusercontent.com/plantuml-stdlib/C4-PlantUML/master/C4_Component.puml
+
+title Component Diagram for Device Service
+
+Container_Boundary(device_service, "Device Service") {
+    Component(device_handler, "Device HTTP Handlers", "Go HTTP", "Handles /api/v1/devices endpoints.")
+    Component(device_repository, "Device Repository", "Go sql", "Provides CRUD operations for devices.")
+}
+
+Container(api_gateway, "API Gateway", "Go", "Routes requests")
+Container(command_service, "Command Service", "Go", "Fetches device info")
+Container(auth_service, "Auth Service", "Go", "Verifies device existence")
+ContainerDb(postgres, "PostgreSQL", "Relational DB", "Stores device registry")
+
+Rel(api_gateway, device_handler, "Forwards user requests to", "JSON/HTTP")
+Rel(command_service, device_handler, "Gets device protocol from", "JSON/HTTP")
+Rel(auth_service, device_handler, "Verifies device existence via", "JSON/HTTP")
+Rel(device_handler, device_repository, "Uses")
+Rel(device_repository, postgres, "Reads/Writes device data", "TCP/SQL")
+
+@enduml

@@ -1,13 +1,83 @@
-version: '3.8'
-
 services:
   postgres:
-    image: postgres:16-alpine
+    image: timescale/timescaledb:latest-pg16
     container_name: smarthome-postgres
-  ## тут нужно добавить настройки
+    volumes:
+      - ./smart_home/init.sql:/docker-entrypoint-initdb.d/init.sql
+      - postgres_data:/var/lib/postgresql/data
+    environment:
+      - POSTGRES_USER=postgres
+      - POSTGRES_PASSWORD=postgres
+      - POSTGRES_DB=smarthome
+    ports:
+      - "5432:5432"
+    restart: unless-stopped
+    healthcheck:
+      test: ["CMD-SHELL", "pg_isready -U postgres -d smarthome"]
+      interval: 10s
+      timeout: 5s
+      retries: 5
+    networks:
+      - smarthome-network
+
+  mosquitto:
+    image: eclipse-mosquitto:latest
+    container_name: mosquitto_broker
+    ports:
+      - "1883:1883"   # Standard MQTT
+      - "9001:9001"   # WebSockets
+    volumes:
+      - ./smart_home/mosquitto.conf:/mosquitto/config/mosquitto.conf
+      - mosquitto_data:/mosquitto/data
+      - mosquitto_log:/mosquitto/log
+    depends_on:
+      - auth-service
+    restart: always
+    networks:
+      - smarthome-network
 
   temperature-api:
-  ## тут нужно добавить приложение
+    build:
+      context: ./temperature-api
+      dockerfile: Dockerfile
+    container_name: temperature-api-app
+    environment:
+      - PORT=8081
+    ports:
+      - "8081:8081"
+    restart: unless-stopped
+    networks:
+      - smarthome-network
+
+  humidity-temperature-sensors-service:
+    build:
+      context: ./humidity-temperature-sensors-service
+      dockerfile: Dockerfile
+    container_name: humidity-temperature-sensors-service-app
+    depends_on:
+      - mosquitto
+    environment:
+      - MQTT_URL=tcp://mosquitto:1883
+    restart: unless-stopped
+    networks:
+      - smarthome-network
+
+  telemetry-service:
+    build:
+      context: ./telemetry-service
+      dockerfile: Dockerfile
+    container_name: telemetry-service-app
+    depends_on:
+      postgres:
+        condition: service_healthy
+      mosquitto:
+        condition: service_started
+    environment:
+      - DATABASE_URL=postgres://postgres:postgres@postgres:5432/smarthome?sslmode=disable
+      - MQTT_URL=tcp://mosquitto:1883
+    restart: unless-stopped
+    networks:
+      - smarthome-network
 
   app:
     build:
@@ -20,16 +90,94 @@ services:
       temperature-api:
         condition: service_started
     environment:
-      - DATABASE_URL=postgres://postgres:postgres@postgres:5432/smarthome
+      - DATABASE_URL=postgres://postgres:postgres@postgres:5432/smarthome?sslmode=disable
       - TEMPERATURE_API_URL=http://temperature-api:8081
+    restart: unless-stopped
+    networks:
+      - smarthome-network
+
+  api-gateway:
+    build:
+      context: ./api-gateway
+      dockerfile: Dockerfile
+    container_name: api-gateway
+    environment:
+      - PORT=8080
+      - DEVICE_SERVICE_URL=http://device-service:8080
+      - COMMAND_SERVICE_URL=http://command-service:8080
+      - SMART_HOME_URL=http://app:8080
     ports:
       - "8080:8080"
+    depends_on:
+      - app
+      - device-service
+      - command-service
+    restart: unless-stopped
+    networks:
+      - smarthome-network
+
+  device-service:
+    build:
+      context: ./device-service
+      dockerfile: Dockerfile
+    container_name: device-service
+    environment:
+      - PORT=8080
+      - DATABASE_URL=postgres://postgres:postgres@postgres:5432/smarthome?sslmode=disable
+    depends_on:
+      postgres:
+        condition: service_healthy
+    restart: unless-stopped
+    networks:
+      - smarthome-network
+
+  command-service:
+    build:
+      context: ./command-service
+      dockerfile: Dockerfile
+    container_name: command-service
+    environment:
+      - PORT=8080
+      - MQTT_URL=tcp://mosquitto:1883
+    depends_on:
+      - mosquitto
+    restart: unless-stopped
+    networks:
+      - smarthome-network
+
+  auth-service:
+    build:
+      context: ./auth-service
+      dockerfile: Dockerfile
+    container_name: auth-service
+    environment:
+      - PORT=8080
+      - DEVICE_SERVICE_URL=http://device-service:8080
+    depends_on:
+      - device-service
+    restart: unless-stopped
+    networks:
+      - smarthome-network
+
+  scenario-service:
+    build:
+      context: ./scenario-service
+      dockerfile: Dockerfile
+    container_name: scenario-service
+    environment:
+      - MQTT_URL=tcp://mosquitto:1883
+      - COMMAND_SERVICE_URL=http://command-service:8080
+    depends_on:
+      - mosquitto
+      - command-service
     restart: unless-stopped
     networks:
       - smarthome-network
 
 volumes:
   postgres_data:
+  mosquitto_data:
+  mosquitto_log:
 
 networks:
   smarthome-network:
